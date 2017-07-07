@@ -1,4 +1,4 @@
-var http=require('http').createServer(createServer).listen(8090);
+var http=require('http').createServer(createServer).listen(process.env.PORT||8090);
 var io=require('socket.io')(http);
 var fs=require('fs');
 function createServer(req,res){

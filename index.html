@@ -74,7 +74,7 @@ textarea{
     <script type="text/javascript">
        var timer;
        var currentChatId;
-       var io=io('http://localhost:8090');
+       var io=io('https://node-chat-app-sourabh.herokuapp.com/');
        io.on('connected',function(){
            localStorage.setItem('chatId',io.id);
        });
