@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Chat Application</title>
+    <!--<link rel="stylesheet" href="css/style.css"/>-->
+    <style>
+        .chat-container{
+    width: 300px;
+}
+.chat-box{
+    position: relative;
+    display: none;
+}
+#msgWindow{
+    width:100%;
+    height: 350px;
+    overflow-y: scroll;
+    padding: 24px 8px;
+    width: 286px;
+    border: 1px solid #000;   
+}
+.typing{
+    position: absolute;
+    bottom: 0px;
+    color: #333;
+    left: 5px;
+}
+.txt-name{
+    width: 100%;
+}
+textarea{
+    width: 100%;
+    height: 40px;
+    display: none;
+}
+.msgWindow div{
+    display: block;
+    margin: 5px 0; 
+    padding: 3px 0 3px 12px;
+    border-radius: 7px;
+}
+.right{
+    text-align: right;
+    background: #97cdd2;
+}
+.left{
+    background: #e5ed9d;
+}
+        </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div id="connectionContainer">
+        <input type="text" id="tbName" class="txt-name" placeholder="Enter your name">
+        <br/>
+        <button onclick="connect();" id="btnConnect">Connect</button>
+        </div>
+        <div class="chat-box" id="chatBox">
+            <div id="msgWindow"></div>
+            <div id="typingMsg" class="typing"></div> 
+        </div>
+        <textarea name="" id="txtChat" onkeyup="sendMessage(event);" placeholder="Enter text to send" cols="30" rows="10"></textarea>
+    </div>
+    <div id="users">
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script
+  src="https://code.jquery.com/jquery-2.2.4.min.js"
+  integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+  crossorigin="anonymous"></script>
+    <script type="text/javascript">
+       var timer;
+       var currentChatId;
+       var io=io('http://localhost:8090');
+       io.on('connected',function(){
+           localStorage.setItem('chatId',io.id);
+       });
+       function sendMessage(event){
+           if(event.keyCode===13){
+               var name=document.getElementById("tbName").value,
+               msg=document.getElementById("txtChat").value;
+               if(!name.trim().length){
+                   alert("Enter your name");
+               }
+               if(!msg.trim().length){
+                   alert("Enter message");
+               }
+               if(msg.length&&name.length){
+                   io.emit('send',{name:name,message:msg,from:currentChatId});
+                   document.getElementById("msgWindow").innerHTML+="<div class='right'>"+msg+"</div>";
+                   document.getElementById("txtChat").value="";
+               }
+               return;
+           }
+           io.emit('typing_from',document.getElementById("tbName").value);
+       }
+       io.on('receive',function(data){
+           var name=data.name,msg=data.message;
+           var msgWind=document.getElementById("msgWindow");
+           msgWind.innerHTML+="<div class='left'><strng>"+name+"</strong> : "+msg+"</div>";
+           msgWind.scrollTop=msgWind.scrollHeight;
+       });
+       io.on('typing',function(data){
+           console.log(data);
+           document.getElementById("typingMsg").innerHTML=data;
+           clearTimeout(timer);
+           timer=setTimeout(function(){
+               document.getElementById("typingMsg").innerHTML="";
+           },500);
+       });
+       function connect(){
+           io.emit('saveUser',document.getElementById("tbName").value);
+           document.getElementById("tbName").style.display="none";
+           document.getElementById("btnConnect").style.display="none";
+           document.getElementById("chatBox").style.display="block";
+           document.getElementById("txtChat").style.display="block";
+       }
+       io.on("GetActiveUsers",function(data){
+           var str="";
+           for(var i=0;i<data.length;i++){
+               str+="<div><a href='javascript:void(0)' onclick=\"StartChat('"+data[i].chatId+"')\">"+data[i].name+"</a></div>";
+           }
+           document.getElementById("users").innerHTML=str;
+       });
+       function StartChat(chatId){
+           currentChatId=chatId;
+       }
+    </script>
+</body>
+</html>
